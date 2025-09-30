@@ -16,25 +16,19 @@ LLM 生成品牌與名人描述，結合 Jennifer Aaker 品牌人格五大構面
 
  Recall@10 達 65.63%，驗證系統具備實用性與應用價值。
 
----
-
 ## 🛠️ 方法(Method)
 
 ### 1️⃣ 系統開發工具與技術
 
-![image.png](attachment:214e4a8d-8c75-48b5-93ad-519a01fc5feb:image.png)
 
 ### 2️⃣ 模型架構圖
 
-![image.png](attachment:6ab37833-e8ee-4285-841f-3a8cce6cd4d6:image.png)
-
----
+![Test](images/achitexture.png)
 
 ## 🎬 影片 (Video)
 
 https://youtu.be/tnKHp7R5xjM
 
----
 
 ## 🙋‍♀️參與成員 (Member)
 
@@ -44,4 +38,5 @@ https://youtu.be/tnKHp7R5xjM
 2. 王睦閎
 3. 陳郁晴
 4. 吳岱芸
+
 5. 許博堯
