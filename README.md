@@ -23,7 +23,7 @@ LLM 生成品牌與名人描述，結合 Jennifer Aaker 品牌人格五大構面
 
 ### 2️⃣ 模型架構圖
 
-[![Model Architecture](images/模型架構圖.png)](https://github.com/lai-yingchun/StarMatch)
+[![Model Architecture](images/模型架構圖_20251004.png)](https://github.com/lai-yingchun/StarMatch)
 
 ## 🎬 影片 (Video)
 
@@ -40,6 +40,7 @@ https://youtu.be/tnKHp7R5xjM
 4. 吳岱芸
 
 5. 許博堯
+
 
 
 
