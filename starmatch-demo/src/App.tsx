@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import starMatchLogo from "./assets/starmatch-logo.png";
 import starMatchLogo2 from "./assets/starmatch-logo2.png";
 
