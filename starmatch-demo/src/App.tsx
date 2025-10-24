@@ -19,16 +19,29 @@ const Page = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-const SectionCard = ({
+type SectionCardProps = {
+  title?: React.ReactNode;      // ← 支援 JSX，不限文字
+  right?: React.ReactNode;
+  children?: React.ReactNode;
+  className?: string;           // ← 允許外部客製樣式
+};
+
+const SectionCard: React.FC<SectionCardProps> = ({
   title,
   right,
   children,
-}: {
-  title?: string;
-  right?: React.ReactNode;
-  children?: React.ReactNode;
+  className = "",
 }) => (
-  <div className="bg-rose-50/40 border border-rose-100 rounded-2xl p-5 shadow-sm">
+  <div
+    className={`
+      bg-rose-50/40
+      border border-rose-100
+      rounded-2xl
+      p-5
+      shadow-sm
+      ${className}
+    `}
+  >
     {(title || right) && (
       <div className="flex items-center justify-between mb-3">
         {title ? (
