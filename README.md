@@ -13,7 +13,7 @@ npm -v
 
 ### 2️⃣ Clone the Repository
 ```
-git clone https://github.com/your-username/starmatch-demo.git
+https://github.com/lai-yingchun/StarMatch.git
 ```
 ```
 cd starmatch-demo
@@ -28,4 +28,5 @@ npm install
 ```
 npm run dev
 ```
+
 
