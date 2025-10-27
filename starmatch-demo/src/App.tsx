@@ -11,6 +11,7 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import CelebrityFeature from "./CelebrityFeature";
 /* =========================================================
    型別宣告
 ========================================================= */
@@ -305,20 +306,20 @@ const api = {
    共用 UI Components
 ========================================================= */
 
-const Page = ({ children }: { children: React.ReactNode }) => (
+export const Page = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen flex flex-col bg-white text-slate-900">
     {children}
   </div>
 );
 
-type SectionCardProps = {
+export type SectionCardProps = {
   title?: React.ReactNode;
   right?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
 };
 
-const SectionCard: React.FC<SectionCardProps> = ({
+export const SectionCard: React.FC<SectionCardProps> = ({
   title,
   right,
   children,
@@ -350,7 +351,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
   </div>
 );
 
-const PrimaryButton = ({
+export const PrimaryButton = ({
   children,
   onClick,
   className = "",
@@ -395,7 +396,7 @@ const ScorePill = ({ score }: { score: number }) => (
    NavBar
 ========================================================= */
 
-const NavBar = () => {
+export const NavBar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
@@ -864,6 +865,7 @@ const Analysis = () => (
   </Page>
 );
 
+
 /* News */
 const mockNews = [
   {
@@ -982,6 +984,7 @@ export default function App() {
         <Route path="/results/:brand" element={<Results />} />
         <Route path="/candidate/:id" element={<CandidateDetail />} />
         <Route path="/analysis" element={<Analysis />} />
+        <Route path="/celebrity-feature" element={<CelebrityFeature />} />
         <Route path="/news" element={<News />} />
       </Routes>
     </BrowserRouter>
