@@ -705,9 +705,7 @@ const Results = () => {
 
             <PrimaryButton
               className="w-[80%] max-w-[320px] text-lg py-3 text-white"
-              onClick={() =>
-                alert("TODO: 名人特徵比對視覺化（t-SNE/Plotly）")
-              }
+              onClick={() => nav("/celebrity-feature")}
             >
               名人特徵比對
             </PrimaryButton>
@@ -824,47 +822,50 @@ const CandidateDetail = () => {
 };
 
 /* Analysis*/
-const Analysis = () => (
-  <Page>
-    <NavBar />
-    <div className="w-full max-w-[1200px] mx-auto px-4 py-16 flex justify-center">
-      <div className="w-full md:w-[600px]">
-        <SectionCard>
-          <div className="flex flex-col items-center text-center gap-8 w-full">
-            <div className="text-2xl font-bold text-[#1e4a57]">
-              視覺化分析
-            </div>
+const Analysis = () => {
+  const nav = useNavigate();
 
-            <div className="flex flex-col gap-6 w-full max-w-[400px]">
-              <PrimaryButton
-                className="
-                  w-full text-lg py-4 text-white
-                  rounded-[999px]
-                  shadow-[0_24px_48px_rgba(0,0,0,0.15)]
-                "
-                onClick={() => alert("TODO: 名人特徵比對（t-SNE 互動圖）")}
-              >
-                名人特徵比對
-              </PrimaryButton>
+  return (
+    <Page>
+      <NavBar />
+      <div className="w-full max-w-[1200px] mx-auto px-4 py-16 flex justify-center">
+        <div className="w-full md:w-[600px]">
+          <SectionCard>
+            <div className="flex flex-col items-center text-center gap-8 w-full">
+              <div className="text-2xl font-bold text-[#1e4a57]">
+                視覺化分析
+              </div>
 
-              <PrimaryButton
-                className="
-                  w-full text-lg py-4 text-white
-                  rounded-[999px]
-                  shadow-[0_24px_48px_rgba(0,0,0,0.15)]
-                "
-                onClick={() => alert("TODO: 品牌群聚與產業趨勢視覺化")}
-              >
-                品牌趨勢分析
-              </PrimaryButton>
+              <div className="flex flex-col gap-6 w-full max-w-[400px]">
+                <PrimaryButton
+                  className="
+                    w-full text-lg py-4 text-white
+                    rounded-[999px]
+                    shadow-[0_24px_48px_rgba(0,0,0,0.15)]
+                  "
+                  onClick={() => nav("/celebrity-feature")}
+                >
+                  名人特徵比對
+                </PrimaryButton>
+
+                <PrimaryButton
+                  className="
+                    w-full text-lg py-4 text-white
+                    rounded-[999px]
+                    shadow-[0_24px_48px_rgba(0,0,0,0.15)]
+                  "
+                  onClick={() => alert("TODO: 品牌群聚與產業趨勢視覺化")}
+                >
+                  品牌趨勢分析
+                </PrimaryButton>
+              </div>
             </div>
-          </div>
-        </SectionCard>
+          </SectionCard>
+        </div>
       </div>
-    </div>
-  </Page>
-);
-
+    </Page>
+  );
+};
 
 /* News */
 const mockNews = [
