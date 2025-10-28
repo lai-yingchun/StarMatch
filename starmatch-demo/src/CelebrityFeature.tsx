@@ -1,69 +1,60 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
-import { Page, SectionCard, PrimaryButton, NavBar } from "./App"; // 路徑依專案調整
+import { Page, SectionCard, PrimaryButton, NavBar } from "./App";
 
 type TSNEPoint = {
-  id: string;
-  name: string;
+  artist: string;
+  job: string;
   x: number;
   y: number;
-  score: number;
-  persona: string;
-  type: string;
+  persona?: string;
 };
-
-const mockTSNEData: TSNEPoint[] = [
-  { id: "a1", name: "藝人A", x: 14, y: 16, score: 9.2, persona: "熱血又有活力，擅長現場表演", type: "歌手" },
-  { id: "a2", name: "藝人B", x: 16, y: 13, score: 8.5, persona: "穩重有實力，專注於音樂創作", type: "歌手" },
-  { id: "a3", name: "藝人C", x: 15, y: 18, score: 7.8, persona: "流量型藝人，粉絲互動高", type: "歌手" },
-  { id: "a10", name: "藝人J", x: 17, y: 12, score: 8.1, persona: "綜藝咖，娛樂感十足", type: "歌手" },
-
-  { id: "a5", name: "藝人E", x: 13, y: 11, score: 7.5, persona: "搞笑藝人，綜藝感強", type: "演員" },
-  { id: "a6", name: "藝人F", x: 11, y: 14, score: 8.2, persona: "才子型，創作能力佳", type: "演員" },
-  { id: "a8", name: "藝人H", x: 12, y: 16, score: 8.6, persona: "實力派演員，表演扎實", type: "演員" },
-
-  { id: "a7", name: "藝人G", x: 16, y: 15, score: 7.9, persona: "潮流型藝人，形象時尚", type: "模特" },
-  { id: "a9", name: "藝人I", x: 15, y: 14, score: 7.7, persona: "文青型藝人，形象獨特", type: "模特" },
-  { id: "a14", name: "藝人N", x: 14, y: 12, score: 7.8, persona: "專注於舞蹈表演，動作標準", type: "模特" },
-
-  { id: "a13", name: "藝人M", x: 15, y: 17, score: 7.6, persona: "啦啦隊隊長，氣氛帶動力強", type: "啦啦隊" },
-];
 
 const CelebrityFeature: React.FC = () => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
+  const [tsneData, setTsneData] = useState<TSNEPoint[]>([]);
+
+  // ⬇️ 讀取你輸出的 JSON
   useEffect(() => {
+    fetch("/src/data/celeb_tsne.json")
+      .then((res) => res.json())
+      .then((data) => {
+        setTsneData(data);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (tsneData.length === 0) return;
+
     const width = 1100;
     const height = 600;
-    const margin = 100; // 左右上下空間，右側留給 Legend
+    const margin = 100;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
     const g = svg.append("g");
 
-    // Zoom + 平移限制
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 5])
       .translateExtent([[0, 0], [width - margin, height]])
       .extent([[0, 0], [width, height]])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform);
-      });
+      .on("zoom", (event) => g.attr("transform", event.transform));
     svg.call(zoom as any);
 
     // X / Y scale
     const xScale = d3.scaleLinear()
-      .domain(d3.extent(mockTSNEData, (d) => d.x) as [number, number])
+      .domain(d3.extent(tsneData, (d) => d.x) as [number, number])
       .range([margin, width - margin * 2]);
 
     const yScale = d3.scaleLinear()
-      .domain(d3.extent(mockTSNEData, (d) => d.y) as [number, number])
+      .domain(d3.extent(tsneData, (d) => d.y) as [number, number])
       .range([height - margin, margin]);
 
-    // Tooltip
+    // Tooltip setup
     const tooltip = d3.select(tooltipRef.current)
       .style("position", "absolute")
       .style("padding", "8px 12px")
@@ -73,102 +64,68 @@ const CelebrityFeature: React.FC = () => {
       .style("pointer-events", "none")
       .style("opacity", 0);
 
-    // type 顏色
-    const types = Array.from(new Set(mockTSNEData.map(d => d.type)));
+    // 群組顏色
+    const job = Array.from(new Set(tsneData.map(d => d.job)));
     const colorScale = d3.scaleOrdinal()
-      .domain(types)
+      .domain(job)
       .range(d3.schemeTableau10);
 
-    // 畫點
+    // Points
     g.selectAll("circle")
-      .data(mockTSNEData)
+      .data(tsneData)
       .join("circle")
       .attr("cx", (d) => Math.round(xScale(d.x)))
       .attr("cy", (d) => Math.round(yScale(d.y)))
-      .attr("r", 8)
-      .attr("fill", (d) => colorScale(d.type) as string)
+      .attr("r", 6)
+      .attr("fill", (d) => colorScale(d.job) as string)
       .attr("stroke", "#fff")
-      .attr("stroke-width", 2)
+      .attr("stroke-width", 1.5)
       .on("mouseenter", (event, d) => {
-        tooltip
-          .html(`
-            <strong>${d.name}</strong><br/>
-            分數: ${d.score.toFixed(1)}<br/>
-            人設: ${d.persona}<br/>
-            類型: ${d.type}<br/>
-            座標: (${Math.round(d.x)}, ${Math.round(d.y)})
-          `)
-          .style("opacity", 1);
+        tooltip.html(`
+          <strong>${d.artist}</strong><br/>
+          職業: ${d.job}<br/>
+          Persona: ${d.persona ? d.persona: "暫無資料"}
+        `).style("opacity", 1);
       })
       .on("mousemove", (event) => {
-        if (!cardRef.current) return;
-        const cardRect = cardRef.current.getBoundingClientRect();
-        const tooltipEl = tooltipRef.current!;
-        const tooltipWidth = tooltipEl.offsetWidth;
-        const tooltipHeight = tooltipEl.offsetHeight;
-
-        let left = event.clientX - cardRect.left + 10;
-        let top = event.clientY - cardRect.top + 10;
-
-        if (left + tooltipWidth > cardRect.width) left = event.clientX - cardRect.left - tooltipWidth - 10;
-        if (top + tooltipHeight > cardRect.height) top = event.clientY - cardRect.top - tooltipHeight - 10;
-
-        tooltip
-          .style("left", `${left}px`)
-          .style("top", `${top}px`);
+        const cardRect = cardRef.current!.getBoundingClientRect();
+        tooltip.style("left", `${event.clientX - cardRect.left + 10}px`)
+               .style("top", `${event.clientY - cardRect.top + 10}px`);
       })
-      .on("mouseleave", () => {
-        tooltip.style("opacity", 0);
-      });
+      .on("mouseleave", () => tooltip.style("opacity", 0));
 
-    // 永遠顯示藝人名字
-    g.selectAll("text.name")
-      .data(mockTSNEData)
+    // Display artists
+    g.selectAll("text.artist")
+      .data(tsneData)
       .join("text")
-      .attr("class", "name")
-      .attr("x", (d) => Math.round(xScale(d.x)) + 12)
+      .attr("x", (d) => Math.round(xScale(d.x)) + 10)
       .attr("y", (d) => Math.round(yScale(d.y)))
-      .attr("dy", "0.35em")
-      .text((d) => d.name)
-      .style("font-size", "12px")
+      .text((d) => d.artist)
+      .style("font-size", "11px")
       .style("fill", "#333")
       .style("pointer-events", "none");
 
     // Axis
-    const xAxis = d3.axisBottom(xScale).ticks(10).tickFormat(d3.format("d"));
-    const yAxis = d3.axisLeft(yScale).ticks(10).tickFormat(d3.format("d"));
-
     g.append("g")
       .attr("transform", `translate(0, ${height - margin})`)
-      .call(xAxis);
+      .call(d3.axisBottom(xScale).ticks(10));
 
     g.append("g")
       .attr("transform", `translate(${margin},0)`)
-      .call(yAxis);
+
+      .call(d3.axisLeft(yScale).ticks(10));
 
     // Legend
     const legend = svg.append("g")
       .attr("transform", `translate(${width - margin + 20}, ${margin})`);
 
-    types.forEach((t, i) => {
-      const legendRow = legend.append("g")
-        .attr("transform", `translate(0, ${i * 30})`);
-
-      legendRow.append("rect")
-        .attr("width", 20)
-        .attr("height", 20)
-        .attr("fill", colorScale(t) as string);
-
-      legendRow.append("text")
-        .attr("x", 28)
-        .attr("y", 0)
-        .attr("dy", "1em")
-        .text(t)
-        .style("font-size", "14px")
-        .style("fill", "#333");
+    job.forEach((t, i) => {
+      const row = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
+      row.append("rect").attr("width", 18).attr("height", 18).attr("fill", colorScale(t) as string);
+      row.append("text").attr("x", 24).attr("y", 14).text(t).style("font-size", "13px").style("fill", "#333");
     });
 
-  }, []);
+  }, [tsneData]);
 
   return (
     <Page>
@@ -188,4 +145,4 @@ const CelebrityFeature: React.FC = () => {
   );
 };
 
-export default CelebrityFeature;
+export default CelebrityFeature; 
