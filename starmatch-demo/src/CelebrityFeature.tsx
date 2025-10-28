@@ -17,7 +17,6 @@ const CelebrityFeature: React.FC = () => {
 
   const [tsneData, setTsneData] = useState<TSNEPoint[]>([]);
 
-  // ⬇️ 讀取你輸出的 JSON
   useEffect(() => {
     fetch("/src/data/celeb_tsne.json")
       .then((res) => res.json())
@@ -32,12 +31,13 @@ const CelebrityFeature: React.FC = () => {
     const width = 1100;
     const height = 600;
     const margin = 100;
+    const minLabelDist = 25; // 文字最小間距
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
-
     const g = svg.append("g");
 
+    // Zoom
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 5])
       .translateExtent([[0, 0], [width - margin, height]])
@@ -45,16 +45,15 @@ const CelebrityFeature: React.FC = () => {
       .on("zoom", (event) => g.attr("transform", event.transform));
     svg.call(zoom as any);
 
-    // X / Y scale
+    // X/Y scale
     const xScale = d3.scaleLinear()
       .domain(d3.extent(tsneData, (d) => d.x) as [number, number])
       .range([margin, width - margin * 2]);
-
     const yScale = d3.scaleLinear()
       .domain(d3.extent(tsneData, (d) => d.y) as [number, number])
       .range([height - margin, margin]);
 
-    // Tooltip setup
+    // Tooltip
     const tooltip = d3.select(tooltipRef.current)
       .style("position", "absolute")
       .style("padding", "8px 12px")
@@ -65,17 +64,17 @@ const CelebrityFeature: React.FC = () => {
       .style("opacity", 0);
 
     // 群組顏色
-    const job = Array.from(new Set(tsneData.map(d => d.job)));
+    const jobs = Array.from(new Set(tsneData.map(d => d.job)));
     const colorScale = d3.scaleOrdinal()
-      .domain(job)
+      .domain(jobs)
       .range(d3.schemeTableau10);
 
     // Points
     g.selectAll("circle")
       .data(tsneData)
       .join("circle")
-      .attr("cx", (d) => Math.round(xScale(d.x)))
-      .attr("cy", (d) => Math.round(yScale(d.y)))
+      .attr("cx", (d) => xScale(d.x))
+      .attr("cy", (d) => yScale(d.y))
       .attr("r", 6)
       .attr("fill", (d) => colorScale(d.job) as string)
       .attr("stroke", "#fff")
@@ -84,7 +83,7 @@ const CelebrityFeature: React.FC = () => {
         tooltip.html(`
           <strong>${d.artist}</strong><br/>
           職業: ${d.job}<br/>
-          Persona: ${d.persona ? d.persona: "暫無資料"}
+          Persona: ${d.persona ? d.persona : "暫無資料"}
         `).style("opacity", 1);
       })
       .on("mousemove", (event) => {
@@ -94,12 +93,41 @@ const CelebrityFeature: React.FC = () => {
       })
       .on("mouseleave", () => tooltip.style("opacity", 0));
 
-    // Display artists
+    // 篩選文字顯示（避免重疊）
+    const shownLabels: {x: number, y: number}[] = [];
+    const labelPoints = tsneData.filter(d => {
+      const px = xScale(d.x);
+      const py = yScale(d.y);
+      for (const l of shownLabels) {
+        const dist = Math.hypot(px - l.x, py - l.y);
+        if (dist < minLabelDist) return false; // 太近就不顯示
+      }
+      shownLabels.push({x: px, y: py});
+      return true;
+    });
+
+    // Label offsets
+    const labelOffsetX = 15;
+    const labelOffsetY = -10;
+
+    // Leader lines
+    g.selectAll("line.leader")
+      .data(labelPoints)
+      .join("line")
+      .attr("x1", (d) => xScale(d.x))
+      .attr("y1", (d) => yScale(d.y))
+      .attr("x2", (d) => xScale(d.x) + labelOffsetX)
+      .attr("y2", (d) => yScale(d.y) + labelOffsetY)
+      .attr("stroke", "gray")
+      .attr("stroke-width", 0.5)
+      .attr("stroke-dasharray", "1 1");
+
+    // Text labels
     g.selectAll("text.artist")
-      .data(tsneData)
+      .data(labelPoints)
       .join("text")
-      .attr("x", (d) => Math.round(xScale(d.x)) + 10)
-      .attr("y", (d) => Math.round(yScale(d.y)))
+      .attr("x", (d) => xScale(d.x) + labelOffsetX)
+      .attr("y", (d) => yScale(d.y) + labelOffsetY)
       .text((d) => d.artist)
       .style("font-size", "11px")
       .style("fill", "#333")
@@ -112,17 +140,16 @@ const CelebrityFeature: React.FC = () => {
 
     g.append("g")
       .attr("transform", `translate(${margin},0)`)
-
       .call(d3.axisLeft(yScale).ticks(10));
 
     // Legend
     const legend = svg.append("g")
       .attr("transform", `translate(${width - margin + 20}, ${margin})`);
 
-    job.forEach((t, i) => {
+    jobs.forEach((job, i) => {
       const row = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
-      row.append("rect").attr("width", 18).attr("height", 18).attr("fill", colorScale(t) as string);
-      row.append("text").attr("x", 24).attr("y", 14).text(t).style("font-size", "13px").style("fill", "#333");
+      row.append("rect").attr("width", 18).attr("height", 18).attr("fill", colorScale(job) as string);
+      row.append("text").attr("x", 24).attr("y", 14).text(job).style("font-size", "13px").style("fill", "#333");
     });
 
   }, [tsneData]);
@@ -145,4 +172,4 @@ const CelebrityFeature: React.FC = () => {
   );
 };
 
-export default CelebrityFeature; 
+export default CelebrityFeature;
