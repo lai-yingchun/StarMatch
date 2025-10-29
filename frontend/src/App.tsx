@@ -12,7 +12,7 @@ import {
 } from "react-router-dom";
 
 import CelebrityFeature from "./CelebrityFeature";
-
+import BrandFeature from "./BrandFeature";
 /* =========================================================
    API types & client (call backend instead of CSV)
 ========================================================= */
@@ -721,7 +721,7 @@ const Results = () => {
 
             <PrimaryButton
               className="w-[80%] max-w-[320px] text-lg py-3 text-white"
-              onClick={() => alert("TODO: 品牌趨勢分析（群聚/時序）")}
+              onClick={() => nav("/brand-feature")}
             >
               品牌趨勢分析
             </PrimaryButton>
@@ -939,7 +939,7 @@ const Analysis = () => {
                     rounded-[999px]
                     shadow-[0_24px_48px_rgba(0,0,0,0.15)]
                   "
-                  onClick={() => alert("TODO: 品牌群聚與產業趨勢視覺化")}
+                  onClick={() => nav("/brand-feature")}
                 >
                   品牌趨勢分析
                 </PrimaryButton>
@@ -952,7 +952,7 @@ const Analysis = () => {
   );
 };
 
-/* News (demo 假資料，這段還是前端 mock，因為後端還沒做新聞 API) */
+/* News */
 const mockNews = [
   {
     title: "筆電品牌釋出新系列形象片，鎖定年輕族群",
@@ -1071,6 +1071,7 @@ export default function App() {
         <Route path="/candidate/:id" element={<CandidateDetail />} />
         <Route path="/analysis" element={<Analysis />} />
         <Route path="/celebrity-feature" element={<CelebrityFeature />} />
+        <Route path="/brand-feature" element={<BrandFeature />} />
         <Route path="/news" element={<News />} />
       </Routes>
     </BrowserRouter>

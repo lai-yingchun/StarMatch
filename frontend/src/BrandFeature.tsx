@@ -3,14 +3,13 @@ import * as d3 from "d3";
 import { Page, SectionCard, PrimaryButton, NavBar } from "./App";
 
 type TSNEPoint = {
-  artist: string;
-  job: string;
+  brand: string;
+  category: string;
   x: number;
   y: number;
-  persona?: string;
 };
 
-const CelebrityFeature: React.FC = () => {
+const BrandFeature: React.FC = () => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -18,7 +17,7 @@ const CelebrityFeature: React.FC = () => {
   const [tsneData, setTsneData] = useState<TSNEPoint[]>([]);
 
   useEffect(() => {
-    fetch("/src/data/celeb_tsne.json")
+    fetch("/src/data/brand_tsne.json")
       .then((res) => res.json())
       .then((data) => {
         setTsneData(data);
@@ -30,8 +29,8 @@ const CelebrityFeature: React.FC = () => {
 
     const width = 1100;
     const height = 600;
-    const margin = 100;
-    const minLabelDist = 25; // 文字最小間距
+    const margin = 150;
+    const minLabelDist = 25; // 文字最小間距（pixel）
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -63,10 +62,10 @@ const CelebrityFeature: React.FC = () => {
       .style("pointer-events", "none")
       .style("opacity", 0);
 
-    // 群組顏色
-    const jobs = Array.from(new Set(tsneData.map(d => d.job)));
+    // 顏色對應類別
+    const categories = Array.from(new Set(tsneData.map(d => d.category)));
     const colorScale = d3.scaleOrdinal()
-      .domain(jobs)
+      .domain(categories)
       .range(d3.schemeTableau10);
 
     // Points
@@ -76,14 +75,13 @@ const CelebrityFeature: React.FC = () => {
       .attr("cx", (d) => xScale(d.x))
       .attr("cy", (d) => yScale(d.y))
       .attr("r", 6)
-      .attr("fill", (d) => colorScale(d.job) as string)
+      .attr("fill", (d) => colorScale(d.category) as string)
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .on("mouseenter", (event, d) => {
         tooltip.html(`
-          <strong>${d.artist}</strong><br/>
-          職業: ${d.job}<br/>
-          Persona: ${d.persona ? d.persona : "暫無資料"}
+          <strong>${d.brand}</strong><br/>
+          類別: ${d.category}
         `).style("opacity", 1);
       })
       .on("mousemove", (event) => {
@@ -93,7 +91,7 @@ const CelebrityFeature: React.FC = () => {
       })
       .on("mouseleave", () => tooltip.style("opacity", 0));
 
-    // 篩選文字顯示（避免重疊）
+    // Filter points for labels (避免文字重疊)
     const shownLabels: {x: number, y: number}[] = [];
     const labelPoints = tsneData.filter(d => {
       const px = xScale(d.x);
@@ -123,12 +121,12 @@ const CelebrityFeature: React.FC = () => {
       .attr("stroke-dasharray", "1 1");
 
     // Text labels
-    g.selectAll("text.artist")
+    g.selectAll("text.brand")
       .data(labelPoints)
       .join("text")
       .attr("x", (d) => xScale(d.x) + labelOffsetX)
       .attr("y", (d) => yScale(d.y) + labelOffsetY)
-      .text((d) => d.artist)
+      .text((d) => d.brand)
       .style("font-size", "11px")
       .style("fill", "#333")
       .style("pointer-events", "none");
@@ -146,10 +144,10 @@ const CelebrityFeature: React.FC = () => {
     const legend = svg.append("g")
       .attr("transform", `translate(${width - margin + 20}, ${margin})`);
 
-    jobs.forEach((job, i) => {
+    categories.forEach((cat, i) => {
       const row = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
-      row.append("rect").attr("width", 18).attr("height", 18).attr("fill", colorScale(job) as string);
-      row.append("text").attr("x", 24).attr("y", 14).text(job).style("font-size", "13px").style("fill", "#333");
+      row.append("rect").attr("width", 18).attr("height", 18).attr("fill", colorScale(cat) as string);
+      row.append("text").attr("x", 24).attr("y", 14).text(cat).style("font-size", "13px").style("fill", "#333");
     });
 
   }, [tsneData]);
@@ -158,7 +156,7 @@ const CelebrityFeature: React.FC = () => {
     <Page>
       <NavBar />
       <div className="max-w-8xl mx-auto px-4 py-16">
-        <SectionCard title="名人特徵比對 (t-SNE 互動圖)">
+        <SectionCard title="品牌特徵比對 (t-SNE 互動圖)">
           <div className="relative" ref={cardRef}>
             <svg ref={svgRef} width={1100} height={600} className="border" />
             <div ref={tooltipRef}></div>
@@ -172,4 +170,4 @@ const CelebrityFeature: React.FC = () => {
   );
 };
 
-export default CelebrityFeature;
+export default BrandFeature;
