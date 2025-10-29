@@ -12,25 +12,22 @@ import {
 } from "react-router-dom";
 
 import CelebrityFeature from "./CelebrityFeature";
+
 /* =========================================================
-   型別宣告
+   API types & client (call backend instead of CSV)
 ========================================================= */
 
-type CsvRow = {
-  brand: string;
-  recommended_artist: string;
-  artist_persona: string;
-  artist_past_endorsement: string;
-  recommendation_reason: string;
-  similar_artist: string;
-};
+// 你的後端 base URL
+const API_BASE = "http://127.0.0.1:8000";
 
+// 後端回傳的推薦清單 item
 type Recommendation = {
-  id: string;
-  name: string;
-  score: number;
+  id: string;    // 藝人名字 (ex. "林志玲")
+  name: string;  // 顯示名稱 (通常等於 id)
+  score: number; // 0~10
 };
 
+// 前端顯示在 CandidateDetail 頁面要用的資料模型
 type CandidateDetailVM = {
   id: string;
   name: string;
@@ -41,264 +38,71 @@ type CandidateDetailVM = {
   similarArtists: string[];
 };
 
-/* =========================================================
-   共用小工具
-========================================================= */
-
-function stableScore(brand: string, artist: string) {
-  const seed = Array.from(brand + artist).reduce(
-    (a, c) => a + c.charCodeAt(0),
-    0
-  );
-  const scoreFloat = 6 + ((seed % 40) / 40) * 4; // 6.0 ~ 10.0
-  return scoreFloat;
-}
-
-function splitList(str: string): string[] {
-  return str
-    .split(/[，,]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-/* =========================================================
-   CSV Parser + API (前端模擬後端資料)
-========================================================= */
-
-let _csvCache: CsvRow[] | null = null;
-
-async function loadCSV(): Promise<CsvRow[]> {
-  if (_csvCache) return _csvCache;
-
-  const resp = await fetch("/src/data/starmarch_data_20251025.csv");
-  const text = await resp.text();
-
-  // 把整份 CSV 切成「真正的一列一列」，支援欄位內含換行
-  const rowsText = buildRowsRespectingQuotes(text);
-
-  if (rowsText.length < 2) {
-    _csvCache = [];
-    return _csvCache;
-  }
-
-  // header
-  const headerCols = parseCsvLineSmart(rowsText[0]);
-
-  const colIndex = {
-    brand: headerCols.indexOf("brand"),
-    recommended_artist: headerCols.indexOf("recommended_artist"),
-    artist_persona: headerCols.indexOf("artist_persona"),
-    artist_past_endorsement: headerCols.indexOf("artist_past_endorsement"),
-    recommendation_reason: headerCols.indexOf("recommendation_reason"),
-    similar_artist: headerCols.indexOf("similar_artist"),
-  };
-
-  function getCol(cols: string[], idx: number): string {
-    return idx >= 0 && idx < cols.length ? cols[idx] : "";
-  }
-
-  const parsedRows: CsvRow[] = [];
-
-  for (let i = 1; i < rowsText.length; i++) {
-    const line = rowsText[i];
-    if (!line) continue;
-
-    const cols = parseCsvLineSmart(line);
-
-    parsedRows.push({
-      brand: getCol(cols, colIndex.brand),
-      recommended_artist: getCol(cols, colIndex.recommended_artist),
-      artist_persona: getCol(cols, colIndex.artist_persona),
-      artist_past_endorsement: getCol(cols, colIndex.artist_past_endorsement),
-      recommendation_reason: getCol(cols, colIndex.recommendation_reason),
-      similar_artist: getCol(cols, colIndex.similar_artist),
-    });
-  }
-
-  // 方便你在 DevTools 裡檢查實際 parse 結果
-  console.log("CSV parsedRows =", parsedRows);
-
-  _csvCache = parsedRows;
-  return parsedRows;
-}
-
-/**
- * 把整份 CSV 字串組成 row 陣列，一 row = 一筆資料
- * - 支援欄位內含換行（只要還在引號裡，就不切行）
- * - 保留引號字元本身，後面 parseCsvLineSmart 會再處理
- */
-function buildRowsRespectingQuotes(fullText: string): string[] {
-  const rows: string[] = [];
-  let cur = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < fullText.length; i++) {
-    const ch = fullText[i];
-    const nextCh = i + 1 < fullText.length ? fullText[i + 1] : "";
-
-    if (ch === '"') {
-      // 保留引號本身
-      cur += '"';
-
-      if (inQuotes) {
-        // 已在引號裡
-        if (nextCh === '"') {
-          // 轉義成實際的 "
-          cur += '"';
-          i++; // skip 下一個
-        } else {
-          // 離開引號狀態
-          inQuotes = false;
-        }
-      } else {
-        // 進入引號狀態
-        inQuotes = true;
-      }
-      continue;
-    }
-
-    if (ch === "\r") {
-      // 忽略 CR，統一用 \n
-      continue;
-    }
-
-    if (ch === "\n") {
-      if (inQuotes) {
-        // 引號內的換行，當成內容
-        cur += "\n";
-      } else {
-        // 引號外的換行 => 一筆完成
-        const trimmed = cur.trim();
-        if (trimmed.length > 0) {
-          rows.push(trimmed);
-        }
-        cur = "";
-      }
-      continue;
-    }
-
-    // 一般字元
-    cur += ch;
-  }
-
-  // 最後一筆（檔案尾巴沒有 \n 的情況）
-  const leftover = cur.trim();
-  if (leftover.length > 0) {
-    rows.push(leftover);
-  }
-
-  return rows;
-}
-
-/**
- * 把單一 row 的 CSV 字串拆成每個欄位
- * - 支援 "欄位,裡,有,逗號"
- * - 支援 "欄位\n裡面有換行"
- * - 支援 "" 代表字面上的 "
- */
-function parseCsvLineSmart(line: string): string[] {
-  const result: string[] = [];
-  let cur = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    const nextCh = i + 1 < line.length ? line[i + 1] : "";
-
-    if (ch === '"') {
-      if (inQuotes) {
-        // 引號內又遇到 "
-        if (nextCh === '"') {
-          // "" -> 字面上的 "
-          cur += '"';
-          i++; // skip 下一個
-        } else {
-          // 結束引號段
-          inQuotes = false;
-        }
-      } else {
-        // 進入引號段
-        inQuotes = true;
-      }
-      continue;
-    }
-
-    if (ch === "," && !inQuotes) {
-      // 欄位分隔
-      result.push(cur);
-      cur = "";
-      continue;
-    }
-
-    cur += ch;
-  }
-
-  // push 最後一欄
-  result.push(cur);
-
-  // 全部做 trim()
-  return result.map((c) => c.trim());
-}
-
-/* API 物件：前端模擬後端查詢 */
+// 小幫手：跟後端拿資料
 const api = {
-  // 依品牌給推薦清單（給 Results 頁用）
   async recommendForBrand(
     brand: string,
-    opts: { topK?: number } = {}
+    opts: {
+      topK?: number;
+      artistGender?: string; // "M" | "F"
+      minAge?: number;
+      maxAge?: number;
+    } = {}
   ): Promise<Recommendation[]> {
-    const topK = opts.topK ?? 10;
-    const rows = await loadCSV();
+    const params = new URLSearchParams();
+    params.set("topK", String(opts.topK ?? 10));
+    if (opts.artistGender) params.set("artistGender", opts.artistGender);
+    if (opts.minAge !== undefined) params.set("minAge", String(opts.minAge));
+    if (opts.maxAge !== undefined) params.set("maxAge", String(opts.maxAge));
 
-    // 嚴格比對 brand 名稱
-    const matched = rows.filter(
-      (r) => r.brand.trim() === brand.trim()
+    const res = await fetch(
+      `${API_BASE}/recommendations/${encodeURIComponent(
+        brand
+      )}?${params.toString()}`,
+      { method: "GET", headers: { "Content-Type": "application/json" } }
     );
 
-    if (matched.length === 0) {
+    if (!res.ok) {
+      console.error("recommendForBrand error", res.status);
       return [];
     }
 
-    // 轉成 Recommendation[]
-    const recs = matched.map((r) => ({
-      id: r.recommended_artist,
-      name: r.recommended_artist,
-      score: stableScore(r.brand, r.recommended_artist),
-    }));
-
-    // 排序後取前 topK
-    return recs.sort((a, b) => b.score - a.score).slice(0, topK);
+    const data = await res.json();
+    return data.results ?? [];
   },
 
-  // 依藝人名稱拿詳細資料（給 CandidateDetail 頁用）
-  async getCandidateDetail(id: string): Promise<CandidateDetailVM> {
-    const rows = await loadCSV();
 
-    const row = rows.find(
-      (r) => r.recommended_artist.trim() === id.trim()
-    );
+  // ✅ 只打 /candidate，不自動打 /explanation
+  async getCandidateDetail(
+    artistName: string,
+    brandName?: string
+  ): Promise<CandidateDetailVM> {
+    const url = `${API_BASE}/candidate/${encodeURIComponent(
+      artistName
+    )}?brand=${encodeURIComponent(brandName ?? "")}`;
 
-    if (!row) {
-      return {
-        id,
-        name: id,
-        score: 0,
-        persona: "（此藝人目前沒有細節資料）",
-        reasonText: "",
-        pastBrands: [],
-        similarArtists: [],
-      };
+    console.log("[frontend] fetch candidate:", url);
+    const resp = await fetch(url);
+
+    if (!resp.ok) {
+      console.error("getCandidateDetail error", resp.status);
+      throw new Error("candidate fetch failed");
     }
 
-    return {
-      id: row.recommended_artist,
-      name: row.recommended_artist,
-      score: stableScore(row.brand, row.recommended_artist),
-      persona: row.artist_persona,
-      reasonText: row.recommendation_reason?.trim() || "",
-      pastBrands: splitList(row.artist_past_endorsement),
-      similarArtists: splitList(row.similar_artist),
+    const raw = await resp.json();
+    console.log("[frontend] candidate raw =", raw);
+
+    const vm: CandidateDetailVM = {
+      id: artistName,
+      name: raw.name ?? artistName,
+      score: raw.score ?? 0,
+      persona: raw.persona ?? "（此藝人尚無詳細介紹）",
+      reasonText: raw.reasonText ?? "",
+      pastBrands: raw.pastBrands ?? [],
+      similarArtists: raw.similarArtists ?? [],
     };
+
+    return vm;
   },
 };
 
@@ -400,54 +204,113 @@ export const NavBar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
-  const link = (to: string, label: string) => (
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
+
+  const NavLinkBtn = ({ to, label }: { to: string; label: string }) => (
     <Link
       to={to}
-      className={`px-4 py-2 rounded-md text-sm font-semibold tracking-wide ${
-        location.pathname === to ? "underline" : ""
-      }`}
+      className={`
+        relative px-4 py-2 text-sm font-semibold tracking-wide transition
+        ${isActive(to) ? "text-[#1e4a57]" : "text-slate-900 hover:text-[#1e4a57]"}
+      `}
     >
       {label}
+      <span
+        className={`
+          absolute left-1/2 -bottom-1 -translate-x-1/2
+          h-[3px] rounded-full transition-all
+          ${isActive(to) ? "w-6 bg-[#1e4a57]" : "w-0 bg-transparent"}
+        `}
+      />
     </Link>
   );
 
   return (
-    <div className="sticky top-0 z-40 bg-rose-200/80 backdrop-blur border-b border-rose-200">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="font-black tracking-wider">
-          HOME
+    <header
+      className="
+        sticky top-0 z-40
+        backdrop-blur-md
+        bg-[#f7d9dc]    // 深一點的粉紅
+        border-b border-[#f1c9cc]
+        shadow-[0_4px_10px_rgba(0,0,0,0.05)]
+      "
+    >
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        {/* 左邊 Logo 區塊 */}
+        <Link to="/" className="flex flex-col leading-tight group">
+          <span
+            className="
+              font-black tracking-wider text-lg text-[#0f172a]
+              group-hover:text-[#1e4a57] transition-colors
+            "
+          >
+            STARMATCH
+          </span>
+
+          <span
+            className="
+              text-[11px] font-medium tracking-[0.08em]
+              text-[#1e293b]
+              group-hover:text-[#1e4a57]/80 transition-colors
+            "
+          >
+            BRAND × CELEBRITY
+          </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-2">
-          {link("/recommend", "RECOMMEND")}
-          {link("/analysis", "ANALYSIS")}
-          {link("/news", "NEWS")}
-        </div>
+        {/* 導覽列 */}
+        <nav className="hidden md:flex items-center gap-2">
+          <NavLinkBtn to="/" label="HOME" />
+          <NavLinkBtn to="/recommend" label="RECOMMENDATION" />
+          <NavLinkBtn to="/analysis" label="ANALYSIS" />
+          <NavLinkBtn to="/news" label="NEWS" />
+        </nav>
 
-        <button className="md:hidden" onClick={() => setOpen((v) => !v)}>
-          <div className="w-6 h-0.5 bg-slate-800 mb-1" />
-          <div className="w-6 h-0.5 bg-slate-800 mb-1" />
-          <div className="w-6 h-0.5 bg-slate-800" />
+        {/* 手機選單按鈕 */}
+        <button
+          className="md:hidden flex flex-col justify-center items-center w-10 h-10 rounded-lg border border-slate-400/40 hover:bg-white/40 transition"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <div className="w-5 h-0.5 bg-slate-800 mb-1 rounded" />
+          <div className="w-5 h-0.5 bg-slate-800 mb-1 rounded" />
+          <div className="w-5 h-0.5 bg-slate-800 rounded" />
         </button>
       </div>
 
+      {/* 手機版 dropdown */}
       {open && (
-        <div className="md:hidden px-4 pb-3 flex flex-col gap-2">
-          <Link to="/recommend" className="py-2" onClick={() => setOpen(false)}>
-            RECOMMEND
-          </Link>
-          <Link to="/analysis" className="py-2" onClick={() => setOpen(false)}>
-            ANALYSIS
-          </Link>
-          <Link to="/news" className="py-2" onClick={() => setOpen(false)}>
-            NEWS
-          </Link>
+        <div
+          className="
+            md:hidden flex flex-col gap-2 px-4 pb-4
+            bg-[rgba(255,232,235,0.7)]/80
+            backdrop-blur-xl
+            border-t border-rose-200/70
+          "
+        >
+          {["HOME", "RECOMMEND", "ANALYSIS", "NEWS"].map((label, i) => {
+            const path =
+              label === "HOME"
+                ? "/"
+                : `/${label.toLowerCase()}`;
+            return (
+              <Link
+                key={i}
+                to={path}
+                className="py-2 text-slate-900 font-semibold tracking-wide"
+                onClick={() => setOpen(false)}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </div>
       )}
-    </div>
+    </header>
   );
 };
-
 /* =========================================================
    Pages
 ========================================================= */
@@ -540,19 +403,45 @@ const Home = () => {
 /* Recommend (輸入品牌) */
 const Recommend = () => {
   const nav = useNavigate();
+
   const [brand, setBrand] = useState("");
 
+  // 篩選條件 state
+  const [artistGender, setArtistGender] = useState(""); // "" | "M" | "F"
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
+
   function onSearch() {
-    if (!brand.trim()) return;
-    nav(`/results/${encodeURIComponent(brand.trim())}`);
+    const b = brand.trim();
+    if (!b) return;
+
+    const params = new URLSearchParams();
+    if (artistGender) params.set("artistGender", artistGender);
+    if (minAge) params.set("minAge", minAge);
+    if (maxAge) params.set("maxAge", maxAge);
+
+    nav(`/results/${encodeURIComponent(b)}?${params.toString()}`);
   }
+
+  const ageOptions = ["", "10", "20", "30", "40", "50", "60", "70", "80"];
 
   return (
     <Page>
       <NavBar />
 
-      <section className="flex-1 w-full bg-[rgb(245,245,245)] flex items-center justify-center px-4 pb-24">
+      <section
+        className="
+          flex-1 w-full bg-[rgb(245,245,245)]
+          flex items-center justify-center
+          px-4 pb-24
+        "
+        style={{
+          minHeight: "calc(100vh - 4rem)", // 4rem ~= 64px navbar height
+        }}
+      >
         <div className="flex flex-col items-center w-full max-w-[1000px]">
+
+          {/* ============ Logo ============ */}
           <div className="flex flex-col items-center mb-0">
             <img
               src={starMatchLogo2}
@@ -561,6 +450,7 @@ const Recommend = () => {
             />
           </div>
 
+          {/* ============ 搜尋框卡片 ============ */}
           <div
             className="
               w-full max-w-[800px]
@@ -569,15 +459,17 @@ const Recommend = () => {
               shadow-[8px_8px_0_rgba(0,0,0,0.4)]
               flex items-center
               px-6 py-4
+              mb-6
             "
           >
             <input
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && onSearch()}
-              placeholder="Brand Name"
+              onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+              placeholder="Brand Name / 品牌名稱"
               className="
-                flex-1 text-[24px] outline-none bg-transparent text-black
+                flex-1 text-[20px] md:text-[24px]
+                outline-none bg-transparent text-black
                 placeholder:text-neutral-500
               "
             />
@@ -587,6 +479,7 @@ const Recommend = () => {
               className="ml-4 flex items-center justify-center"
               aria-label="search"
             >
+              {/* 放大鏡 */}
               <div
                 className="
                   w-[40px] h-[40px] rounded-full
@@ -604,6 +497,72 @@ const Recommend = () => {
               </div>
             </button>
           </div>
+
+          {/* ============ 篩選條件卡片 ============ */}
+          <div
+            className="
+              w-full max-w-[800px]
+              bg-white rounded-lg
+              border-[3px] border-black
+              shadow-[8px_8px_0_rgba(0,0,0,0.4)]
+              px-6 py-6
+            "
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-800">
+              {/* 性別 */}
+              <div className="flex flex-col">
+                <label className="font-semibold text-slate-700 text-xs mb-1">
+                  代言人性別
+                </label>
+                <select
+                  className="border border-slate-400 rounded-lg px-3 py-2 text-slate-800 bg-white"
+                  value={artistGender}
+                  onChange={(e) => setArtistGender(e.target.value)}
+                >
+                  <option value="">不限</option>
+                  <option value="F">女性</option>
+                  <option value="M">男性</option>
+                </select>
+              </div>
+
+              {/* 最小年齡 */}
+              <div className="flex flex-col">
+                <label className="font-semibold text-slate-700 text-xs mb-1">
+                  代言人最小年齡
+                </label>
+                <select
+                  className="border border-slate-400 rounded-lg px-3 py-2 text-slate-800 bg-white"
+                  value={minAge}
+                  onChange={(e) => setMinAge(e.target.value)}
+                >
+                  {ageOptions.map((age) => (
+                    <option key={age} value={age}>
+                      {age === "" ? "不限" : age}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 最大年齡 */}
+              <div className="flex flex-col">
+                <label className="font-semibold text-slate-700 text-xs mb-1">
+                  代言人最大年齡
+                </label>
+                <select
+                  className="border border-slate-400 rounded-lg px-3 py-2 text-slate-800 bg-white"
+                  value={maxAge}
+                  onChange={(e) => setMaxAge(e.target.value)}
+                >
+                  {ageOptions.map((age) => (
+                    <option key={age} value={age}>
+                      {age === "" ? "不限" : age}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
     </Page>
@@ -611,28 +570,51 @@ const Recommend = () => {
 };
 
 /* Results (推薦清單) */
+// 小工具：讀當前 URL 的 querystring
+function useQueryParams() {
+  const loc = useLocation();
+  return React.useMemo(() => new URLSearchParams(loc.search), [loc.search]);
+}
+
+/* Results (推薦清單) */
 const Results = () => {
   const { brand } = useParams();
+  const query = useQueryParams();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Recommendation[]>([]);
   const nav = useNavigate();
   const location = useLocation();
 
+  // 從 URL 上抓篩選參數（如果沒帶就會是 null）
+  const artistGender = query.get("artistGender") || "";
+  const minAgeStr = query.get("minAge") || "";
+  const maxAgeStr = query.get("maxAge") || "";
+
   useEffect(() => {
     let mounted = true;
     (async () => {
       setLoading(true);
+
       const res = await api.recommendForBrand(
         decodeURIComponent(brand || ""),
-        { topK: 10 }
+        {
+          topK: 10,
+          artistGender: artistGender || undefined,
+          minAge: minAgeStr ? Number(minAgeStr) : undefined,
+          maxAge: maxAgeStr ? Number(maxAgeStr) : undefined,
+        }
       );
-      if (mounted) setItems(res);
-      setLoading(false);
+
+      if (mounted) {
+        setItems(res);
+        setLoading(false);
+      }
     })();
+
     return () => {
       mounted = false;
     };
-  }, [brand]);
+  }, [brand, artistGender, minAgeStr, maxAgeStr]); // 參數改變就重新抓
 
   return (
     <Page>
@@ -640,12 +622,39 @@ const Results = () => {
 
       <div className="mx-auto px-4 py-8 grid md:grid-cols-2 gap-8 w-full max-w-[1200px]">
         {/* 左側：候選名單 */}
-        <SectionCard title="候選人名單">
+        <SectionCard
+          title={
+            <div className="flex flex-col">
+              <span>候選人名單</span>
+
+              <span className="text-xs text-slate-500 font-normal mt-1">
+                {/* 性別部分 */}
+                {artistGender
+                  ? artistGender === "F"
+                    ? "女性藝人"
+                    : "男性藝人"
+                  : "不限性別"}
+
+                ／
+
+                {/* 年齡部分 */}
+                {minAgeStr || maxAgeStr
+                  ? (
+                    maxAgeStr
+                      ? `${minAgeStr || "?"}～${maxAgeStr} 歲藝人`
+                      : `年齡≥${minAgeStr} 歲藝人`
+                  )
+                  : "不限年齡"
+                }
+              </span>
+            </div>
+          }
+        >
           {loading ? (
             <div className="py-16 text-center text-slate-500">載入中⋯</div>
           ) : items.length === 0 ? (
             <div className="py-16 text-center text-slate-400">
-              查無此品牌的推薦資料
+              沒有符合條件的代言人
             </div>
           ) : (
             <div className="max-h-[460px] overflow-auto pr-2">
@@ -681,9 +690,9 @@ const Results = () => {
                       onClick={() =>
                         nav(`/candidate/${encodeURIComponent(it.id)}`, {
                           state: {
-                            from: location.pathname,
+                            from: location.pathname + location.search,
                             brand,
-                          } as any,
+                          } as any
                         })
                       }
                     >
@@ -696,7 +705,7 @@ const Results = () => {
           )}
         </SectionCard>
 
-        {/* 右側：視覺化分析*/}
+        {/* 右側保持不變 */}
         <SectionCard>
           <div className="flex flex-col items-center text-center gap-6 h-full py-4">
             <div className="text-2xl font-bold text-[#1e4a57]">
@@ -734,30 +743,104 @@ const Results = () => {
 const CandidateDetail = () => {
   const { id } = useParams();
   const nav = useNavigate();
+  const location = useLocation() as { state?: { brand?: string } };
+
   const [data, setData] = useState<CandidateDetailVM | null>(null);
+  const [loadingPage, setLoadingPage] = useState(true);      // 整個頁面基本資料
+  const [loadingReason, setLoadingReason] = useState(true);  // 推薦原因
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+
     (async () => {
-      const res = await api.getCandidateDetail(id || "");
-      if (mounted) setData(res);
+      try {
+        setLoadingPage(true);
+        setErrorMsg(null);
+
+        // 1. 先拿基本資料（不會叫 LLM 了，應該很快）
+        const base = await api.getCandidateDetail(
+          id || "",
+          location.state?.brand
+        );
+
+        if (mounted) {
+          setData(base);
+          setLoadingPage(false);
+        }
+
+        // 2. 再去拿推薦原因 (LLM)
+        if (mounted) {
+          setLoadingReason(true);
+        }
+
+        if (mounted && (!base.reasonText) && location.state?.brand) {
+          const explainUrl = `${API_BASE}/explanation/${encodeURIComponent(
+            location.state.brand
+          )}/${encodeURIComponent(base.name)}`;
+
+          console.log("[frontend] fetch explanation:", explainUrl);
+          try {
+            const res2 = await fetch(explainUrl);
+            if (res2.ok) {
+              const data2 = await res2.json();
+              console.log("[frontend] explanation raw =", data2);
+
+              if (mounted) {
+                setData((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        reasonText: data2.recommendation_reason ?? "",
+                      }
+                    : prev
+                );
+              }
+            } else {
+              console.error("explanation fetch failed", res2.status);
+            }
+          } catch (err) {
+            console.error("explanation fetch error", err);
+          }
+        }
+
+        if (mounted) {
+          setLoadingReason(false);
+        }
+      } catch (err) {
+        console.error("CandidateDetail error", err);
+        if (mounted) {
+          setErrorMsg("資料載入失敗");
+          setLoadingPage(false);
+          setLoadingReason(false);
+        }
+      }
     })();
+
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [id, location.state?.brand]);
 
-  if (!data) {
+  // --- 整頁還在抓基本資料 ---
+  if (loadingPage || !data) {
     return (
       <Page>
         <NavBar />
         <div className="max-w-6xl mx-auto px-4 py-10 text-slate-500">
-          載入中⋯
+          {errorMsg ? (
+            <div className="text-red-600">{errorMsg}</div>
+          ) : (
+            <div className="text-slate-600 text-lg text-center">
+              載入中…
+            </div>
+          )}
         </div>
       </Page>
     );
   }
 
+  // --- 基本資料拿到了，開始正常 render ---
   return (
     <Page>
       <NavBar />
@@ -782,7 +865,9 @@ const CandidateDetail = () => {
 
         {/* 右上：推薦原因 */}
         <SectionCard title="推薦原因">
-          {data.reasonText && data.reasonText.length > 0 ? (
+          {loadingReason ? (
+            <div className="text-slate-500">推薦原因生成中…</div>
+          ) : data.reasonText && data.reasonText.length > 0 ? (
             <p className="leading-8 text-slate-800 whitespace-pre-line">
               {data.reasonText}
             </p>
@@ -821,7 +906,7 @@ const CandidateDetail = () => {
   );
 };
 
-/* Analysis*/
+/* Analysis */
 const Analysis = () => {
   const nav = useNavigate();
 
@@ -867,7 +952,7 @@ const Analysis = () => {
   );
 };
 
-/* News */
+/* News (demo 假資料，這段還是前端 mock，因為後端還沒做新聞 API) */
 const mockNews = [
   {
     title: "筆電品牌釋出新系列形象片，鎖定年輕族群",
