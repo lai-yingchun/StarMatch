@@ -29,7 +29,7 @@ export default function AnalysisPage() {
                   "
                   onClick={() => nav("/celebrity-feature")}
                 >
-                  名人特徵比對
+                  名人特徵分佈
                 </PrimaryButton>
 
                 <PrimaryButton
@@ -40,7 +40,7 @@ export default function AnalysisPage() {
                   "
                   onClick={() => nav("/brand-feature")}
                 >
-                  品牌趨勢分析
+                  品牌特徵分佈
                 </PrimaryButton>
               </div>
             </div>
