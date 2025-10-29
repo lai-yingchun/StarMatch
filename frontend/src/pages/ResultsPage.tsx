@@ -137,14 +137,14 @@ export default function ResultsPage() {
               className="w-[80%] max-w-[320px] text-lg py-3 text-white"
               onClick={() => nav("/celebrity-feature")}
             >
-              名人特徵比對
+              名人特徵分佈
             </PrimaryButton>
 
             <PrimaryButton
               className="w-[80%] max-w-[320px] text-lg py-3 text-white"
               onClick={() => nav("/brand-feature")}
             >
-              品牌趨勢分析
+              品牌特徵分佈
             </PrimaryButton>
 
             <GhostButton
