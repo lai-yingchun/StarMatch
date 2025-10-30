@@ -1,5 +1,3 @@
-// src/pages/HomePage.tsx
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Page } from "../components/Page";
 import { NavBar } from "../components/NavBar";

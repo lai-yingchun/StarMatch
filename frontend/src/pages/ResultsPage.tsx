@@ -1,4 +1,3 @@
-// src/pages/ResultsPage.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Page } from "../components/Page";

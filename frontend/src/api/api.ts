@@ -1,8 +1,5 @@
 const API_BASE = "http://127.0.0.1:8000";
 
-// src/api/api.ts
-
-// 型別
 export type Recommendation = {
   id: string;
   name: string;

@@ -1,4 +1,3 @@
-// src/components/Buttons.tsx
 import React from "react";
 
 export const PrimaryButton = ({

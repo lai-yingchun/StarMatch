@@ -1,5 +1,4 @@
-// src/pages/BrandFeaturePage.tsx
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { Page } from "../components/Page";
 import { NavBar } from "../components/NavBar";
@@ -175,7 +174,7 @@ export default function BrandFeaturePage() {
     <Page>
       <NavBar />
       <div className="max-w-8xl mx-auto px-4 py-16">
-        <SectionCard title="品牌特徵比對 (t-SNE 互動圖)">
+        <SectionCard title="品牌特徵分佈 (t-SNE 互動圖)">
           <div className="relative" ref={cardRef}>
             <svg ref={svgRef} width={1100} height={600} className="border" />
             <div ref={tooltipRef}></div>

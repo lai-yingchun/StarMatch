@@ -1,5 +1,4 @@
-// src/pages/RecommendPage.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Page } from "../components/Page";
 import { NavBar } from "../components/NavBar";

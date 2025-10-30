@@ -1,5 +1,4 @@
-// src/pages/CandidateDetailPage.tsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Page } from "../components/Page";
 import { NavBar } from "../components/NavBar";

@@ -22,7 +22,7 @@ def get_artist_gender(artist_name: str) -> float | None:
     if sub.empty or "gender" not in sub.columns:
         return None
     g_mean = float(sub["gender"].mean())
-    return 1.0 if g_mean >= 0.5 else 0.0  # 1=男,0=女（依你的資料定義）
+    return 1.0 if g_mean >= 0.5 else 0.0
 
 def artist_is_within_age_range_strict(
     artist_name: str,
@@ -57,7 +57,7 @@ def artist_is_within_age_range_strict(
 def recommend_artists_for_brand(
     brand_name: str,
     top_k: int = 10,
-    artist_gender_filter: str | None = None,  # "M"/"F"/None
+    artist_gender_filter: str | None = None,
     min_age: int | None = None,
     max_age: int | None = None,
 ):
@@ -70,8 +70,7 @@ def recommend_artists_for_brand(
 
     for _, brow in brand_rows.iterrows():
         brand_feat = encode_brand_feature_row(brow)
-        # 這裡用的是 data_loader 裡的 brand_encoder
-        from ..data_loader import brand_encoder  # 局部 import 防循環
+        from ..data_loader import brand_encoder
         brand_embed = brand_encoder.predict(brand_feat, verbose=0)
         brand_embed /= np.linalg.norm(brand_embed, axis=1, keepdims=True)
 
@@ -120,7 +119,6 @@ def recommend_artists_for_brand(
     filtered.sort(key=lambda x: x["score"], reverse=True)
     return filtered[:top_k]
 
-# 這檔案可以繼續 export 其他 helper，給 routers 用
 __all__ = [
     "recommend_artists_for_brand",
     "get_persona_for_artist",

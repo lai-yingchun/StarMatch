@@ -1,4 +1,3 @@
-// src/components/SectionCard.tsx
 import React from "react";
 
 export type SectionCardProps = {

@@ -11,12 +11,10 @@ MODEL_DIR = os.path.join(ASSET_ROOT, "models")
 def l2_normalize_layer(x):
     return tf.nn.l2_normalize(x, axis=-1)
 
-# === Load Pickle Data ===
 df_joined = pd.read_pickle(os.path.join(DATA_DIR, "df_joined.pkl"))
 df_persona = pd.read_pickle(os.path.join(DATA_DIR, "df_persona.pkl"))
 brand_personality = pd.read_pickle(os.path.join(DATA_DIR, "brand_personality_description.pkl"))
 
-# === Load Keras Models ===
 brand_encoder = tf.keras.models.load_model(
     os.path.join(MODEL_DIR, "brand_encoder_model.keras"),
     custom_objects={"l2_normalize_layer": l2_normalize_layer},
@@ -27,8 +25,6 @@ celeb_proj = tf.keras.models.load_model(
 )
 
 print(">> Data loaded.")
-
-# --- column definitions (constants) ---
 
 CELEB_ID_COL = "artist"
 BRAND_COL = "brand"

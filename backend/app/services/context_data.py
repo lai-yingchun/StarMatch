@@ -1,4 +1,3 @@
-# app/services/context_data.py
 from ..data_loader import (
     df_joined,
     df_persona,

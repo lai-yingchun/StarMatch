@@ -1,5 +1,3 @@
-// src/pages/NewsPage.tsx
-import React from "react";
 import { Page } from "../components/Page";
 import { NavBar } from "../components/NavBar";
 import { SectionCard } from "../components/SectionCard";

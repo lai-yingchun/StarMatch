@@ -1,5 +1,4 @@
-// src/pages/CelebrityFeaturePage.tsx
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { Page } from "../components/Page";
 import { NavBar } from "../components/NavBar";
