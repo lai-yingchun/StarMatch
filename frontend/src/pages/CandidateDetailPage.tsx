@@ -123,9 +123,15 @@ import { getCandidateDetail, getLLMExplanation } from "../api/api";export defaul
         <SectionCard title="曾經合作過的品牌">
           {data.pastBrands && data.pastBrands.length > 0 ? (
             <ul className="list-disc pl-6 space-y-2">
-              {data.pastBrands.map((b, i) => (
-                <li key={i}>{b}</li>
-              ))}
+              {data.pastBrands
+                .filter(
+                  (b) =>
+                    !location.state?.brand || // 如果沒有傳入目前品牌就不過濾
+                    b.trim().toLowerCase() !== location.state.brand.trim().toLowerCase() // 過濾掉目前品牌
+                )
+                .map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
             </ul>
           ) : (
             <div className="text-slate-500">目前沒有合作品牌資料</div>
