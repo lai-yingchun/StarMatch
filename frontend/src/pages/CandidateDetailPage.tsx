@@ -6,7 +6,8 @@ import { SectionCard } from "../components/SectionCard";
 import { GhostButton } from "../components/Buttons";
 import { ScorePill } from "../components/ScorePill";
 import type { CandidateDetailVM } from "../api/api";
-import { getCandidateDetail, getLLMExplanation } from "../api/api";export default function CandidateDetailPage() {
+import { getCandidateDetail, getLLMExplanation } from "../api/api";
+export default function CandidateDetailPage() {
   const { id } = useParams();
   const nav = useNavigate();
   const location = useLocation() as { state?: { brand?: string } };
