@@ -24,10 +24,10 @@ export default function RecommendModePage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 flex flex-col gap-4">
                 <h3 className="text-xl font-semibold text-slate-800">
-                  已知品牌名稱
+                  品牌名稱
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  適合已知要比對的品牌，使用既有的品牌資料直接產出符合條件的代言人。
+                  輸入品牌名稱，系統會理解現有品牌理念、形象與市場角色，並推薦最契合的代言人。
                 </p>
                 <PrimaryButton
                   className="w-full text-lg py-3"
@@ -39,10 +39,10 @@ export default function RecommendModePage() {
 
               <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 flex flex-col gap-4">
                 <h3 className="text-xl font-semibold text-slate-800">
-                  只有品牌敘述
+                  品牌敘述
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  將品牌背景、語氣或欲溝通族群以文字描述輸入，系統會匹配相近品牌後推薦代言人。
+                  輸入品牌理念、產品定位或目標客群、理想代言人的性別與年齡區間，系統會匹配相近品牌後推薦代言人。
                 </p>
                 <PrimaryButton
                   className="w-full text-lg py-3"
