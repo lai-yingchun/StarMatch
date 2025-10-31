@@ -174,7 +174,7 @@ export default function BrandFeaturePage() {
     <Page>
       <NavBar />
       <div className="max-w-8xl mx-auto px-4 py-16">
-        <SectionCard title="品牌特徵分佈 (t-SNE 互動圖)">
+        <SectionCard title="品牌特徵地圖 (t-SNE 互動圖)">
           <div className="relative" ref={cardRef}>
             <svg ref={svgRef} width={1100} height={600} className="border" />
             <div ref={tooltipRef}></div>
