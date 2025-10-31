@@ -18,7 +18,7 @@ export default function RecommendModePage() {
             className="bg-white border-[3px] border-black shadow-[8px_8px_0_rgba(0,0,0,0.4)]"
           >
             <p className="text-slate-700 leading-relaxed mb-6">
-              你可以直接輸入品牌名稱，或使用品牌敘述（如品牌語調、目標客群）來尋找可能契合的代言人。
+              你可以直接輸入品牌名稱，或使用品牌敘述來尋找可能契合的代言人。
             </p>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -37,7 +37,7 @@ export default function RecommendModePage() {
                 </PrimaryButton>
               </div>
 
-              <div className="p-6 border border-slate-200 rounded-2xl bg-white flex flex-col gap-4">
+              <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 flex flex-col gap-4">
                 <h3 className="text-xl font-semibold text-slate-800">
                   只有品牌敘述
                 </h3>
