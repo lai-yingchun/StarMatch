@@ -106,16 +106,34 @@ export default function CelebrityFeaturePage() {
       .on("mouseleave", () => tooltip.style("opacity", 0));
 
     const shownLabels: { x: number; y: number }[] = [];
+    const keepNames = new Set(["lulu黃路梓茵", "峮峮吳函峮"]);
+    const removeNames = new Set(["郭雪芙", "許瑋甯", "謝欣穎"]);
+
     const labelPoints = tsneData.filter((d) => {
+      // 若為指定去除名單 → 永不顯示
+      if (removeNames.has(d.artist)) {
+        return false;
+      }
+
       const px = xScale(d.x);
       const py = yScale(d.y);
+
+      // 若為強制保留 → 不做距離過濾，但要加入 shownLabels 讓它阻擋別人
+      if (keepNames.has(d.artist)) {
+        shownLabels.push({ x: px, y: py });
+        return true;
+      }
+
+      // 一般情況距離過濾
       for (const l of shownLabels) {
         const dist = Math.hypot(px - l.x, py - l.y);
         if (dist < minLabelDist) return false;
       }
+
       shownLabels.push({ x: px, y: py });
       return true;
     });
+
 
     const labelOffsetX = 15;
     const labelOffsetY = -10;
