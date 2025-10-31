@@ -1,6 +1,14 @@
-from fastapi import APIRouter, Query
-from ..schemas import RecommendationResponse
-from ..services.recommend import recommend_artists_for_brand
+from fastapi import APIRouter, Query, HTTPException
+from ..schemas import (
+    RecommendationResponse,
+    DescriptionRecommendRequest,
+    DescriptionRecommendationResponse,
+)
+from ..services.recommend import (
+    recommend_artists_for_brand,
+    recommend_artists_by_description,
+)
+from ..services.embedding import VoyageEmbeddingError
 
 router = APIRouter(prefix="/recommendations", tags=["recommend"])
 
@@ -24,5 +32,26 @@ def api_recommendations(
     )
     return {
         "brand": brand,
+        "results": recs,
+    }
+
+@router.post("/by-description", response_model=DescriptionRecommendationResponse)
+def api_recommendations_by_description(payload: DescriptionRecommendRequest):
+    try:
+        primary_brand, matches, recs = recommend_artists_by_description(
+            description=payload.description,
+            top_k=payload.topK,
+            artist_gender_filter=payload.artistGender,
+            min_age=payload.minAge,
+            max_age=payload.maxAge,
+            product_cats=payload.productCats,
+        )
+    except VoyageEmbeddingError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    return {
+        "queryDescription": payload.description,
+        "primaryBrand": primary_brand,
+        "matchedBrands": matches,
         "results": recs,
     }

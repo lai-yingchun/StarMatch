@@ -8,3 +8,5 @@ scikit-learn
 python-multipart
 python-dotenv
 openai
+requests
+voyageai

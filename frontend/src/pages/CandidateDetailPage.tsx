@@ -6,11 +6,25 @@ import { SectionCard } from "../components/SectionCard";
 import { GhostButton } from "../components/Buttons";
 import { ScorePill } from "../components/ScorePill";
 import type { CandidateDetailVM } from "../api/api";
-import { getCandidateDetail, getLLMExplanation } from "../api/api";
+import {
+  getCandidateDetail,
+  getLLMExplanation,
+  getLLMExplanationForDescription,
+} from "../api/api";
+
+type CandidateLocationState = {
+  brand?: string;
+  description?: string;
+  score?: number;
+};
+
 export default function CandidateDetailPage() {
   const { id } = useParams();
   const nav = useNavigate();
-  const location = useLocation() as { state?: { brand?: string } };
+  const location = useLocation() as { state?: CandidateLocationState };
+  const stateBrand = location.state?.brand;
+  const stateDescription = location.state?.description;
+  const stateScore = location.state?.score;
 
   const [data, setData] = useState<CandidateDetailVM | null>(null);
   const [loadingPage, setLoadingPage] = useState(true);
@@ -26,7 +40,11 @@ export default function CandidateDetailPage() {
         setLoadingPage(true);
         setErrorMsg(null);
 
-        const base = await getCandidateDetail(id || "", location.state?.brand);
+        const base = await getCandidateDetail(id || "", stateBrand);
+
+        if (!stateBrand && stateScore != null) {
+          base.score = stateScore;
+        }
 
         if (mounted) {
           setData(base);
@@ -37,25 +55,31 @@ export default function CandidateDetailPage() {
           setLoadingReason(true);
         }
 
-        if (mounted && (!base.reasonText) && location.state?.brand) {
-          const reason = await getLLMExplanation(
-            location.state.brand!,
-            base.name
-          );
-
-          if (mounted) {
-            setData((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    reasonText: reason,
-                  }
-                : prev
-            );
+        let resolvedReason: string | null = null;
+        if (!base.reasonText) {
+          if (stateBrand) {
+            resolvedReason = await getLLMExplanation(stateBrand, base.name);
+          } else if (stateDescription) {
+            resolvedReason = await getLLMExplanationForDescription({
+              artistName: base.name,
+              description: stateDescription,
+              matchScore: stateScore ?? base.score,
+              brandName: stateBrand,
+            });
           }
         }
 
         if (mounted) {
+          if (resolvedReason) {
+            setData((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    reasonText: resolvedReason,
+                  }
+                : prev
+            );
+          }
           setLoadingReason(false);
         }
       } catch (err) {
@@ -71,7 +95,7 @@ export default function CandidateDetailPage() {
     return () => {
       mounted = false;
     };
-  }, [id, location.state?.brand]);
+  }, [id, stateBrand, stateDescription, stateScore]);
 
   if (loadingPage || !data) {
     return (

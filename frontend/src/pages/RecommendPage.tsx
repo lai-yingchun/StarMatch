@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Page } from "../components/Page";
 import { NavBar } from "../components/NavBar";
+import { GhostButton } from "../components/Buttons";
 import starMatchLogo2 from "../assets/starmatch-logo2.png";
 
 export default function RecommendPage() {
@@ -40,6 +41,11 @@ export default function RecommendPage() {
         }}
       >
         <div className="flex flex-col items-center w-full max-w-[1000px]">
+          <div className="w-full flex justify-start mb-4">
+            <GhostButton onClick={() => nav("/recommend-mode")}>
+              返回選擇方式
+            </GhostButton>
+          </div>
           <div className="flex flex-col items-center mb-0">
             <img
               src={starMatchLogo2}

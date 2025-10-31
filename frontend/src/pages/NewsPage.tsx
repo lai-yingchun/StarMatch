@@ -49,11 +49,6 @@ export default function NewsPage() {
             </span>
           }
         >
-          <p className="text-slate-600 leading-relaxed mb-6">
-            以下內容可以由排程式工作（例如 Scrapy 爬蟲 + Celery 排程）自動更新。
-            Demo 目前使用假資料。
-          </p>
-
           {hasNews ? (
             <ul className="space-y-4">
               {mockNews.map((n, i) => (

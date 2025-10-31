@@ -8,3 +8,5 @@ CORS_ALLOW_ORIGINS = ["*"]
 APP_NAME = "StarMatch API"
 APP_VERSION = "1.0.0"
 APP_DESC = "Backend for brand→artist recommendations"
+VOYAGE_API_KEY = os.getenv("VOYAGE_API_KEY", "")
+VOYAGE_MODEL = os.getenv("VOYAGE_MODEL", "voyage-3")

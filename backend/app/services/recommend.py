@@ -14,7 +14,9 @@ from .context_data import (
     get_persona_for_artist,
     get_brand_desc,
     guess_score_for_artist_brand,
+    build_brand_feature_from_embedding,
 )
+from .embedding import get_voyage_embedding
 import numpy as np
 
 def get_artist_gender(artist_name: str) -> float | None:
@@ -119,6 +121,74 @@ def recommend_artists_for_brand(
     filtered.sort(key=lambda x: x["score"], reverse=True)
     return filtered[:top_k]
 
+def recommend_artists_by_description(
+    description: str,
+    top_k: int = 10,
+    artist_gender_filter: str | None = None,
+    min_age: int | None = None,
+    max_age: int | None = None,
+    product_cats: list[str] | None = None,
+):
+    if not description.strip():
+        return None, [], []
+
+    desc_embedding = get_voyage_embedding(description)
+    
+    brand_feat = build_brand_feature_from_embedding(
+        desc_embedding,
+        target_gender=artist_gender_filter,
+        min_age=min_age,
+        max_age=max_age,
+        product_cats=product_cats,
+    )
+
+    from ..data_loader import brand_encoder
+
+    brand_embed = brand_encoder.predict(brand_feat, verbose=0)
+    norm = np.linalg.norm(brand_embed, axis=1, keepdims=True)
+    norm[norm == 0] = 1.0
+    brand_embed /= norm
+
+    sims = np.dot(all_celeb_embeds, brand_embed[0])
+    sorted_idx = np.argsort(sims)[::-1]
+
+    best_by_artist: dict[str, dict] = {}
+    for idx in sorted_idx:
+        artist_name = all_celeb_ids[idx]
+
+        if artist_gender_filter in ["M", "F"]:
+            g_val = get_artist_gender(artist_name)
+            if g_val is None:
+                continue
+            want_male = (artist_gender_filter == "M")
+            if want_male and g_val != 1.0:
+                continue
+            if (not want_male) and g_val != 0.0:
+                continue
+
+        if not artist_is_within_age_range_strict(artist_name, min_age, max_age):
+            continue
+
+        score_val = cosine_to_score(sims[idx])
+        existing = best_by_artist.get(artist_name)
+        if existing is None or score_val > existing["score"]:
+            best_by_artist[artist_name] = {
+                "id": artist_name,
+                "name": artist_name,
+                "score": score_val,
+            }
+
+        if len(best_by_artist) >= top_k and existing is None:
+            # we have collected enough unique artists; can stop early
+            break
+
+    results = sorted(
+        best_by_artist.values(),
+        key=lambda x: x["score"],
+        reverse=True,
+    )
+    return None, [], results[:top_k]
+
 __all__ = [
     "recommend_artists_for_brand",
     "get_persona_for_artist",
@@ -126,4 +196,5 @@ __all__ = [
     "get_similar_artists",
     "get_brand_desc",
     "guess_score_for_artist_brand",
+    "recommend_artists_by_description",
 ]

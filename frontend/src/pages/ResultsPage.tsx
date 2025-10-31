@@ -19,13 +19,42 @@ export default function ResultsPage() {
   const [items, setItems] = useState<Recommendation[]>([]);
   const nav = useNavigate();
   const location = useLocation();
+  const locationState = location.state as
+    | {
+        results?: Recommendation[];
+        description?: string;
+        brand?: string | null;
+        filters?: {
+          artistGender?: string;
+          minAge?: string;
+          maxAge?: string;
+          productCats?: string[];
+        };
+      }
+    | undefined;
+  const customResults = locationState?.results ?? null;
+  const customDescription = locationState?.description ?? "";
+  const customBrand = locationState?.brand ?? undefined;
 
   const artistGender = query.get("artistGender") || "";
   const minAgeStr = query.get("minAge") || "";
   const maxAgeStr = query.get("maxAge") || "";
+  const isCustomDescription =
+    (brand === "__description__" || !brand) &&
+    !!customResults &&
+    customResults.length > 0;
 
   useEffect(() => {
     let mounted = true;
+
+    if (isCustomDescription) {
+      setItems(customResults ?? []);
+      setLoading(false);
+      return () => {
+        mounted = false;
+      };
+    }
+
     (async () => {
       setLoading(true);
 
@@ -45,7 +74,16 @@ export default function ResultsPage() {
     return () => {
       mounted = false;
     };
-  }, [brand, artistGender, minAgeStr, maxAgeStr]);
+  }, [brand, artistGender, minAgeStr, maxAgeStr, isCustomDescription, customResults]);
+
+  const displayBrand =
+    brand && brand !== "__description__"
+      ? `候選人名單 — ${decodeURIComponent(brand)}`
+      : "候選人名單";
+  const descriptionLine =
+    !brand || brand === "__description__"
+      ? customDescription.trim()
+      : "";
 
   return (
     <Page>
@@ -55,7 +93,12 @@ export default function ResultsPage() {
         <SectionCard
           title={
             <div className="flex flex-col">
-              <span>候選人名單</span>
+              <span className="font-semibold break-words">{displayBrand}</span>
+              {descriptionLine && (
+                <span className="text-sm text-slate-500 font-normal mt-1 whitespace-pre-wrap break-words">
+                  品牌敘述：{descriptionLine}
+                </span>
+              )}
 
               <span className="text-xs text-slate-500 font-normal mt-1">
                 {artistGender
@@ -114,8 +157,16 @@ export default function ResultsPage() {
                         nav(`/candidate/${encodeURIComponent(it.id)}`, {
                           state: {
                             from: location.pathname + location.search,
-                            brand,
-                          } as any,
+                            brand:
+                              !brand || brand === "__description__"
+                                ? customBrand ?? undefined
+                                : brand,
+                            description:
+                              !brand || brand === "__description__"
+                                ? customDescription || undefined
+                                : undefined,
+                            score: it.score,
+                          },
                         })
                       }
                     >

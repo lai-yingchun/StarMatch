@@ -66,3 +66,16 @@ all_celeb_ids = df_joined[CELEB_ID_COL].to_numpy()
 
 all_celeb_embeds = celeb_proj.predict(all_celeb_vectors, verbose=0)
 all_celeb_embeds /= np.linalg.norm(all_celeb_embeds, axis=1, keepdims=True)
+
+product_matrix = (
+    df_joined[product_cat_cols]
+    .fillna(0)
+    .to_numpy()
+    .astype(np.float32)
+    if all(col in df_joined.columns for col in product_cat_cols)
+    else None
+)
+if product_matrix is not None and product_matrix.size > 0:
+    PRODUCT_BASE = np.nanmean(product_matrix, axis=0)
+else:
+    PRODUCT_BASE = np.zeros(len(product_cat_cols), dtype=np.float32)

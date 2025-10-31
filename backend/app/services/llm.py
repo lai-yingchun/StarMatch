@@ -12,12 +12,26 @@ from .context_data import (
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def build_recommendation_pitch(brand: str, artist: str) -> dict:
-    brand_desc = get_brand_desc(brand) or "（暫無品牌描述）"
+def build_recommendation_pitch(
+    brand: str,
+    artist: str,
+    *,
+    brand_desc_override: str | None = None,
+    match_score_override: float | None = None,
+) -> dict:
+    brand_desc = (
+        brand_desc_override.strip()
+        if brand_desc_override and brand_desc_override.strip()
+        else get_brand_desc(brand)
+    ) or "（暫無品牌描述）"
     artist_persona = get_persona_for_artist(artist) or "（暫無藝人描述）"
     past_brands = get_past_brands_for_artist(artist) or []
     similar_list = get_similar_artists(artist, top_k=5) or []
-    match_score = guess_score_for_artist_brand(artist, brand)
+    match_score = (
+        float(match_score_override)
+        if match_score_override is not None
+        else guess_score_for_artist_brand(artist, brand)
+    )
 
     user_prompt = f"""
                     [品牌敘述]

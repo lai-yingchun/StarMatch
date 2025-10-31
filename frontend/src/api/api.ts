@@ -16,6 +16,18 @@ export type CandidateDetailVM = {
   similarArtists: string[];
 };
 
+export type BrandMatch = {
+  brand: string;
+  similarity: number;
+};
+
+export type DescriptionRecommendation = {
+  queryDescription: string;
+  primaryBrand: string | null;
+  matchedBrands: BrandMatch[];
+  results: Recommendation[];
+};
+
 export async function recommendForBrand(
   brand: string,
   opts: {
@@ -84,6 +96,71 @@ export async function getLLMExplanation(brandName: string, artistName: string) {
     console.error("explanation fetch failed", resp.status);
     return "";
   }
+  const data = await resp.json();
+  return data.recommendation_reason ?? "";
+}
+
+export async function recommendForDescription(
+  payload: {
+    description: string;
+    topK?: number;
+    artistGender?: string;
+    minAge?: number;
+    maxAge?: number;
+    productCats?: string[];
+  }
+): Promise<DescriptionRecommendation> {
+  const res = await fetch(`${API_BASE}/recommendations/by-description`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      description: payload.description,
+      topK: payload.topK ?? 10,
+      artistGender: payload.artistGender,
+      minAge: payload.minAge,
+      maxAge: payload.maxAge,
+      productCats: payload.productCats ?? [],
+    }),
+  });
+
+  if (!res.ok) {
+    console.error("recommendForDescription error", res.status);
+    throw new Error("recommendation by description failed");
+  }
+
+  const data = await res.json();
+  return {
+    queryDescription: data.queryDescription ?? payload.description,
+    primaryBrand: data.primaryBrand ?? null,
+    matchedBrands: data.matchedBrands ?? [],
+    results: data.results ?? [],
+  };
+}
+
+export async function getLLMExplanationForDescription(opts: {
+  artistName: string;
+  description: string;
+  matchScore?: number;
+  brandName?: string | null;
+}): Promise<string> {
+  const resp = await fetch(`${API_BASE}/explanation/description`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      artist: opts.artistName,
+      brandDescription: opts.description,
+      matchScore: opts.matchScore,
+      brandName: opts.brandName ?? undefined,
+    }),
+  });
+
+  if (!resp.ok) {
+    console.error("explanation description fetch failed", resp.status);
+    return "";
+  }
+
   const data = await resp.json();
   return data.recommendation_reason ?? "";
 }

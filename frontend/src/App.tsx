@@ -8,13 +8,20 @@ import AnalysisPage from "./pages/AnalysisPage";
 import CelebrityFeaturePage from "./pages/CelebrityFeaturePage";
 import BrandFeaturePage from "./pages/BrandFeaturePage";
 import NewsPage from "./pages/NewsPage";
+import RecommendModePage from "./pages/RecommendModePage";
+import RecommendDescriptionPage from "./pages/RecommendDescriptionPage";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/recommend-mode" element={<RecommendModePage />} />
         <Route path="/recommend" element={<RecommendPage />} />
+        <Route
+          path="/recommend-description"
+          element={<RecommendDescriptionPage />}
+        />
         <Route path="/results/:brand" element={<ResultsPage />} />
         <Route path="/candidate/:id" element={<CandidateDetailPage />} />
         <Route path="/analysis" element={<AnalysisPage />} />

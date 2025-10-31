@@ -7,6 +7,11 @@ export const NavBar = () => {
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
+    if (path === "/recommend-mode") {
+      return ["/recommend-mode", "/recommend", "/recommend-description"].some(
+        (p) => location.pathname.startsWith(p)
+      );
+    }
     return location.pathname.startsWith(path);
   };
 
@@ -63,7 +68,7 @@ export const NavBar = () => {
 
         <nav className="hidden md:flex items-center gap-2">
           <NavLinkBtn to="/" label="HOME" />
-          <NavLinkBtn to="/recommend" label="RECOMMENDATION" />
+          <NavLinkBtn to="/recommend-mode" label="RECOMMENDATION" />
           <NavLinkBtn to="/analysis" label="ANALYSIS" />
           <NavLinkBtn to="/news" label="NEWS" />
         </nav>
@@ -88,7 +93,12 @@ export const NavBar = () => {
           "
         >
           {["HOME", "RECOMMEND", "ANALYSIS", "NEWS"].map((label, i) => {
-            const path = label === "HOME" ? "/" : `/${label.toLowerCase()}`;
+            const path =
+              label === "HOME"
+                ? "/"
+                : label === "RECOMMEND"
+                ? "/recommend-mode"
+                : `/${label.toLowerCase()}`;
             return (
               <Link
                 key={i}

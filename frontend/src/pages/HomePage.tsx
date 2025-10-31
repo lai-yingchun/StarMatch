@@ -41,7 +41,7 @@ export default function HomePage() {
 
           <div className="flex flex-col items-center justify-center gap-10">
             <button
-              onClick={() => nav("/recommend")}
+              onClick={() => nav("/recommend-mode")}
               className="
                 w-[400px] rounded-[60px] px-10 py-6 text-white font-semibold
                 text-[32px] leading-none tracking-wide
@@ -58,7 +58,7 @@ export default function HomePage() {
               className="
                 w-[400px] rounded-[60px] px-10 py-6 text-white font-semibold
                 text-[32px] leading-none tracking-wide
-                shadow-[0_16px_32px_rgrgba(0,0,0,0.15)]
+                shadow-[0_16px_32px_rgba(0,0,0,0.15)]
                 transition hover:opacity-90
               "
               style={{ backgroundColor: "#2b6777" }}
