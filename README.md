@@ -19,7 +19,7 @@ npm -v
 https://github.com/lai-yingchun/StarMatch.git
 ```
 ```
-cd starmatch
+cd Starmatch
 ```
 
 ### 3️⃣ Backend Setup (Run this first)
@@ -78,5 +78,6 @@ npm run dev
 ```
 This will start the frontend at:
 => http://localhost:5173
+
 
 
