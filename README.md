@@ -49,6 +49,8 @@ pip install -r requirements.txt
 Create a .env file in the backend directory:
 ```
 OPENAI_API_KEY=your_api_key_here
+VOYAGE_API_KEY=your_api_key_here
+VOYAGE_MODEL=voyage-3.5
 ```
 
 Then start the FastAPI server:
@@ -78,6 +80,7 @@ npm run dev
 ```
 This will start the frontend at:
 => http://localhost:5173
+
 
 
 
